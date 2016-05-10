@@ -47,10 +47,12 @@
     <Compile Include="Entities\CityState.cs" />
     <Compile Include="Entities\Fax.cs" />
     <Compile Include="Entities\FaxOptions.cs" />
+    <Compile Include="Entities\FaxStatusResult.cs" />
     <Compile Include="Entities\Internal\PhaxioConstants.cs" />
     <Compile Include="Entities\Internal\SerializeAsAttribute.cs" />
     <Compile Include="Entities\PhoneNumber.cs" />
     <Compile Include="Entities\Pricing.cs" />
+    <Compile Include="Entities\Recipients.cs" />
     <Compile Include="Entities\Result.cs" />
     <Compile Include="Entities\Internal\Url.cs" />
     <Compile Include="PhaxioClient.cs" />

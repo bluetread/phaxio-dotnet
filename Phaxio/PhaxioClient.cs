@@ -196,6 +196,20 @@ namespace Phaxio
         }
 
         /// <summary>
+        ///  Gets the account for this Phaxio instance.
+        /// </summary>
+        /// <returns>An Account object</returns>
+        public FaxStatusResult GetFaxStatus(string faxId)
+        {
+            Action<IRestRequest> addParameters = req =>
+            {
+                req.AddParameter("id", faxId);
+            };
+
+            return request<FaxStatusResult>("faxStatus", Method.GET, true, addParameters).Data;
+        }
+
+        /// <summary>
         ///  Downloads a hosted document
         /// </summary>
         /// <param name="faxId">The id of the fax to download.</param>
@@ -230,17 +244,17 @@ namespace Phaxio
         public Dictionary<string, CityState> ListAreaCodes (bool? tollFree = null, string state = null)
         {
             Action<IRestRequest> addParameters = req =>
+            {
+                if (tollFree != null)
                 {
-                    if (tollFree != null)
-                    {
-                        req.AddParameter("is_toll_free", tollFree);
-                    }
+                    req.AddParameter("is_toll_free", tollFree);
+                }
 
-                    if (state != null)
-                    {
-                        req.AddParameter("state", state);
-                    }
-                };
+                if (state != null)
+                {
+                    req.AddParameter("state", state);
+                }
+            };
 
             return request<Dictionary<string, CityState>>("areaCodes", Method.POST, false, addParameters).Data;
         }
@@ -399,7 +413,7 @@ namespace Phaxio
                 {
                     req.AddParameter("to[]", number);
                 }
-                
+
                 if (options != null)
                 {
                     // Add all the scalar properties
