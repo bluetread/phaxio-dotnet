@@ -196,9 +196,10 @@ namespace Phaxio
         }
 
         /// <summary>
-        ///  Gets the account for this Phaxio instance.
+        ///  Gets the fax status data for the specified faxId
         /// </summary>
-        /// <returns>An Account object</returns>
+        /// <param name="faxId">The id of the fax.</param>
+        /// <returns>A FaxStatusResult object</returns>
         public FaxStatusResult GetFaxStatus(string faxId)
         {
             Action<IRestRequest> addParameters = req =>

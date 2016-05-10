@@ -34,6 +34,6 @@ namespace Phaxio.Entities
         public long CompletedAt { get; set; }
 
         [DeserializeAs(Name = "recipients")]
-        public List<Recipients> Recipients { get; set; }
+        public List<Recipient> Recipients { get; set; }
     }
 }

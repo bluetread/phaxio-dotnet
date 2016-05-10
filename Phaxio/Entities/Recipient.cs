@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Phaxio.Entities
 {
-    public class Recipients
+    public class Recipient
     {
         [DeserializeAs(Name = "number")]
         public string Number { get; set; }
