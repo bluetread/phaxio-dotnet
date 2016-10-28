@@ -4,6 +4,7 @@ using Phaxio.Tests.Helpers;
 using RestSharp;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -16,6 +17,26 @@ namespace Phaxio.Tests.IntegrationTests
     public class FaxTests
     {
         private List<string> filesToCleanup = new List<string>();
+        private bool extraRateLimit = false;
+        private bool storageEnabled = true;
+
+        [SetUp]
+        public void SetUp()
+        {
+            string config = ConfigurationManager.AppSettings["IsFreeAccount"];
+            bool freeAccount;
+            if (bool.TryParse(config, out freeAccount))
+            {
+                extraRateLimit = freeAccount;
+            }
+
+            config = ConfigurationManager.AppSettings["IsSentStorageEnabled"];
+            bool enabledStorage;
+            if (bool.TryParse(config, out enabledStorage))
+            {
+                storageEnabled = enabledStorage;
+            }
+        }
 
         [TearDown]
         public void Teardown()
@@ -38,9 +59,24 @@ namespace Phaxio.Tests.IntegrationTests
 
             var testPdf = BinaryFixtures.getTestPdfFile();
 
-            var faxId = phaxio.SendFax("8088675309", testPdf);
+            var result = phaxio.SendFax("8088675309", testPdf);
 
-            Assert.IsNotEmpty(faxId);
+            Assert.IsNotEmpty(result.Id);
+        }
+
+        [Test]
+        public void IntegrationTests_Fax_SendBinary()
+        {
+            var config = new KeyManager();
+
+            var phaxio = new PhaxioClient(config["api_key"], config["api_secret"]);
+
+            var testPdf = BinaryFixtures.GetTestPdf();
+            var testPdfFile = BinaryFixtures.getTestPdfFile();
+
+            var result = phaxio.SendFax("8088675309", testPdf, testPdfFile.Name);
+
+            Assert.IsNotEmpty(result.Id);
         }
 
         [Test]
@@ -56,7 +92,7 @@ namespace Phaxio.Tests.IntegrationTests
 
             var phaxCodePng = phaxio.DownloadPhaxCodePng(metadata);
 
-            var phaxCodeFilename = metadata + ".png";
+            var phaxCodeFilename = BinaryFixtures.GetQualifiedPath(metadata + ".png");
 
             filesToCleanup.Add(phaxCodeFilename);
 
@@ -65,9 +101,10 @@ namespace Phaxio.Tests.IntegrationTests
             // Attach phax code to pdf
             var testPdf = BinaryFixtures.getTestPdfFile();
 
+            if (extraRateLimit) Thread.Sleep(1000);
             var testPdfWithCodeBytes = phaxio.AttachPhaxCodeToPdf(0, 0, testPdf, metadata: metadata);
 
-            var testPdfWithCodeFilename = metadata + ".pdf";
+            var testPdfWithCodeFilename = BinaryFixtures.GetQualifiedPath(metadata + ".pdf");
 
             filesToCleanup.Add(testPdfWithCodeFilename);
 
@@ -76,9 +113,16 @@ namespace Phaxio.Tests.IntegrationTests
             var testPdfWithCode = new FileInfo(testPdfWithCodeFilename);
 
             // Send phax using pdf with phax code
-            var faxId = phaxio.SendFax("8088675309", testPdfWithCode);
+            if (extraRateLimit) Thread.Sleep(1000);
+            var result = phaxio.SendFax("8088675309", testPdfWithCode);
+            Assert.That(result.Success, Is.True, $"unsuccessful send: {result.Message}");
+            Assert.That(result.Id, Is.Not.Null, $"missing fax ID: {result.Message}");
+            var faxId = result.Id;
+
+            if (!storageEnabled) return;
 
             // Phaxio rate limits, so we need to wait a second.
+            if (extraRateLimit) Thread.Sleep(1000);
             Thread.Sleep(100);
 
             // Download a thumbnail of the sent fax
@@ -90,7 +134,7 @@ namespace Phaxio.Tests.IntegrationTests
                 try
                 {
                     var thumbnailBytes = phaxio.DownloadFax(faxId, "s");
-                    var thumbnailFilename = metadata + ".jpg";
+                    var thumbnailFilename = BinaryFixtures.GetQualifiedPath(metadata + ".jpg");
 
                     filesToCleanup.Add(thumbnailFilename);
 
@@ -108,6 +152,7 @@ namespace Phaxio.Tests.IntegrationTests
             Assert.IsTrue(downloadSuccess, "DownloadFax should've worked");
 
             // Resend fax
+            if (extraRateLimit) Thread.Sleep(1000);
             var resendResult = phaxio.ResendFax(faxId);
 
             Assert.True(resendResult.Success, "ResendFax should return success.");

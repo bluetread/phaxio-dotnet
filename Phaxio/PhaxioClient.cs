@@ -1,4 +1,5 @@
-﻿using Phaxio.Entities;
+﻿using Microsoft.CSharp.RuntimeBinder;
+using Phaxio.Entities;
 using Phaxio.Entities.Internal;
 using RestSharp;
 using RestSharp.Deserializers;
@@ -87,7 +88,7 @@ namespace Phaxio
                 req.AddParameter("id", faxId);
             };
 
-            return request<Object>("faxCancel", Method.GET, true, addParameters).ToResult();
+            return request<Object>("faxCancel", Method.GET, true, addParameters).ToResult(faxId);
         }
 
         /// <summary>
@@ -141,7 +142,7 @@ namespace Phaxio
                 req.AddParameter("files_only", filesOnly);
             };
 
-            return request<Object>("deleteFax", Method.GET, true, addParameters).ToResult();
+            return request<Object>("deleteFax", Method.GET, true, addParameters).ToResult(faxId);
         }
 
         /// <summary>
@@ -196,6 +197,21 @@ namespace Phaxio
         }
 
         /// <summary>
+        ///  Gets the fax status data for the specified faxId
+        /// </summary>
+        /// <param name="faxId">The id of the fax.</param>
+        /// <returns>A FaxStatusResult object</returns>
+        public FaxStatusResult GetFaxStatus(string faxId)
+        {
+            Action<IRestRequest> addParameters = req =>
+            {
+                req.AddParameter("id", faxId);
+            };
+
+            return request<FaxStatusResult>("faxStatus", Method.GET, true, addParameters).Data;
+        }
+
+        /// <summary>
         ///  Downloads a hosted document
         /// </summary>
         /// <param name="faxId">The id of the fax to download.</param>
@@ -230,17 +246,17 @@ namespace Phaxio
         public Dictionary<string, CityState> ListAreaCodes (bool? tollFree = null, string state = null)
         {
             Action<IRestRequest> addParameters = req =>
+            {
+                if (tollFree != null)
                 {
-                    if (tollFree != null)
-                    {
-                        req.AddParameter("is_toll_free", tollFree);
-                    }
+                    req.AddParameter("is_toll_free", tollFree);
+                }
 
-                    if (state != null)
-                    {
-                        req.AddParameter("state", state);
-                    }
-                };
+                if (state != null)
+                {
+                    req.AddParameter("state", state);
+                }
+            };
 
             return request<Dictionary<string, CityState>>("areaCodes", Method.POST, false, addParameters).Data;
         }
@@ -326,7 +342,7 @@ namespace Phaxio
                 req.AddParameter("id", faxId);
             };
 
-            return request<Object>("resendFax", Method.GET, true, addParameters).ToResult();
+            return request<Object>("resendFax", Method.GET, true, addParameters).ToResult(faxId);
         }
 
         /// <summary>
@@ -339,9 +355,30 @@ namespace Phaxio
         /// If you leave this blank, the default account code will be used.</param>
         /// <param name="pageNumber">The page number to attach the code to.</param>
         /// <returns>a string representing a fax id.</returns>
-        public string SendFax(string toNumber, FileInfo file, FaxOptions options = null)
+        public Result SendFax(string toNumber, FileInfo file, FaxOptions options = null)
         {
             return SendFax(new List<string> { toNumber }, new List<FileInfo> { file }, options);
+        }
+
+        /// <summary>
+        ///  Sends a fax
+        /// </summary>
+        /// <param name="toNumber">The number to send the fax to</param>
+        /// <param name="file">The file to send. Supoorts doc, docx, pdf, tif, jpg, odt, txt, html and png</param>
+        /// <param name="filename">The name of the file.</param>
+        /// <param name="options">Additional fax options.</param>
+        /// <param name="metadata">The metadata of the PhaxCode you'd like to use.
+        /// If you leave this blank, the default account code will be used.</param>
+        /// <param name="pageNumber">The page number to attach the code to.</param>
+        /// <returns>a string representing a fax id.</returns>
+        public Result SendFax(string toNumber, byte[] file, string filename, FaxOptions options = null)
+        {
+            return SendFax(new List<string> { toNumber },
+                new List<Tuple<byte[], string>>()
+                {
+                    new Tuple<byte[], string>(file, filename)
+                },
+                options);
         }
 
         /// <summary>
@@ -354,7 +391,7 @@ namespace Phaxio
         /// If you leave this blank, the default account code will be used.</param>
         /// <param name="pageNumber">The page number to attach the code to.</param>
         /// <returns>a string representing a fax id.</returns>
-        public string SendFax(IEnumerable<string> toNumbers, FileInfo file, FaxOptions options = null)
+        public Result SendFax(IEnumerable<string> toNumbers, FileInfo file, FaxOptions options = null)
         {
             return SendFax(toNumbers, new List<FileInfo> { file }, options);
         }
@@ -369,7 +406,7 @@ namespace Phaxio
         /// If you leave this blank, the default account code will be used.</param>
         /// <param name="pageNumber">The page number to attach the code to.</param>
         /// <returns>a string representing a fax id.</returns>
-        public string SendFax(string toNumber, IEnumerable<FileInfo> files, FaxOptions options = null)
+        public Result SendFax(string toNumber, IEnumerable<FileInfo> files, FaxOptions options = null)
         {
             return SendFax(new List<string> { toNumber }, files, options);
         }
@@ -384,7 +421,7 @@ namespace Phaxio
         /// If you leave this blank, the default account code will be used.</param>
         /// <param name="pageNumber">The page number to attach the code to.</param>
         /// <returns>a string representing a fax id.</returns>
-        public string SendFax(IEnumerable<string> toNumbers, IEnumerable<FileInfo> files, FaxOptions options = null)
+        public Result SendFax(IEnumerable<string> toNumbers, IEnumerable<FileInfo> files, FaxOptions options = null)
         {
             Action<IRestRequest> requestModifier = req =>
             {
@@ -395,43 +432,88 @@ namespace Phaxio
                     req.AddFile("filename[]", fileBytes, file.Name, "application/octet");
                 }
 
-                foreach (var number in toNumbers)
-                {
-                    req.AddParameter("to[]", number);
-                }
-                
-                if (options != null)
-                {
-                    // Add all the scalar properties
-                    var props = typeof(FaxOptions).GetProperties();
-                    foreach (var prop in props)
-                    {
-                        var serializeAs = prop.GetCustomAttributes(false)
-                            .OfType<SerializeAsAttribute>()
-                            .FirstOrDefault();
+                AddNumbers(req, toNumbers);
 
-                        if (serializeAs != null)
-                        {
-                            object value = prop.GetValue(options, null);
-
-                            if (value != null)
-                            {
-                                req.AddParameter(serializeAs.Value, value);
-                            }
-                        }
-                    }
-
-                    // Add the tags
-                    foreach (var pair in options.Tags)
-                    {
-                        req.AddParameter("tag[" + pair.Key + "]", pair.Value);
-                    }
-                }
+                AddOptions(req, options);
             };
 
-            var longId = request<dynamic>("send", Method.POST, true, requestModifier).Data["faxId"];
+            return SendFax(requestModifier);
+        }
 
-            return longId.ToString();
+        /// <summary>
+        ///  Sends a fax
+        /// </summary>
+        /// <param name="toNumbers">The numbers to send the fax to</param>
+        /// <param name="files">The files to send and their names. Supoorts doc, docx, pdf, tif, jpg, odt, txt, html and png</param>
+        /// <param name="options">Additional fax options.</param>
+        /// <param name="metadata">The metadata of the PhaxCode you'd like to use.
+        /// If you leave this blank, the default account code will be used.</param>
+        /// <param name="pageNumber">The page number to attach the code to.</param>
+        /// <returns>a string representing a fax id.</returns>
+        public Result SendFax(IEnumerable<string> toNumbers, IEnumerable<Tuple<byte[], string>> files, FaxOptions options = null)
+        {
+            Action<IRestRequest> requestModifier = req =>
+            {
+                foreach (var file in files)
+                {
+                    req.AddFile("filename[]", file.Item1, file.Item2, "application/octet");
+                }
+
+                AddNumbers(req, toNumbers);
+
+                AddOptions(req, options);
+            };
+
+            return SendFax(requestModifier);
+        }
+
+        private Result SendFax(Action<IRestRequest> requestModifier)
+        {
+            var resp = request<dynamic>("send", Method.POST, true, requestModifier);
+            var result = resp.ToResult();
+
+            try { result.Id = resp.Data["faxId"].ToString(); }
+            catch (RuntimeBinderException) { }
+            return result;
+        }
+
+        private static void AddNumbers(IRestRequest req, IEnumerable<string> toNumbers)
+        {
+            foreach (var number in toNumbers)
+            {
+                req.AddParameter("to[]", number);
+            }
+        }
+
+        private static void AddOptions(IRestRequest req, FaxOptions options)
+        {
+            if (options != null)
+            {
+                // Add all the scalar properties
+                var props = typeof(FaxOptions).GetProperties();
+                foreach (var prop in props)
+                {
+                    var serializeAs = prop.GetCustomAttributes(false)
+                        .OfType<SerializeAsAttribute>()
+                        .FirstOrDefault();
+
+                    if (serializeAs != null)
+                    {
+                        object value = prop.GetValue(options, null);
+
+                        if (value != null)
+                        {
+                            req.AddParameter(serializeAs.Value, value);
+                        }
+                    }
+                }
+
+                // Add the tags
+                foreach (var pair in options.Tags)
+                {
+                    req.AddParameter("tag[" + pair.Key + "]", pair.Value);
+                }
+            }
         }
 
         /// <summary>

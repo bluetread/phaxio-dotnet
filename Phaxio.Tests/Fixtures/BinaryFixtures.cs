@@ -18,15 +18,15 @@ namespace Phaxio.Tests
 
         public static FileInfo getTestPdfFile ()
         {
-            return new FileInfo(getQualifiedPath("test.pdf"));
+            return new FileInfo(GetQualifiedPath("test.pdf"));
         }
 
         public static byte[] GetTestPdf()
         {
-            return File.ReadAllBytes(getQualifiedPath("test.pdf"));
+            return File.ReadAllBytes(GetQualifiedPath("test.pdf"));
         }
 
-        private static string getQualifiedPath(string filename)
+        public static string GetQualifiedPath(string filename)
         {
             return AppDomain.CurrentDomain.SetupInformation.ApplicationBase + "Fixtures" + Path.DirectorySeparatorChar + filename;
         }

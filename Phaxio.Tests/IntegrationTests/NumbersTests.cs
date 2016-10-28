@@ -4,6 +4,7 @@ using Phaxio.Tests.Helpers;
 using RestSharp;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -14,6 +15,19 @@ namespace Phaxio.Tests.IntegrationTests
     [TestFixture, Explicit]
     public class NumbersTests
     {
+        private bool canProvision = true;
+
+        [SetUp]
+        public void SetUp()
+        {
+            var cfg = ConfigurationManager.AppSettings["IsFreeAccount"];
+            bool freeAccount;
+            if (bool.TryParse(cfg, out freeAccount))
+            {
+                canProvision = !freeAccount;
+            }
+        }
+
         [Test]
         public void IntegrationTests_Numbers_GetAreaCodes()
         {
@@ -21,7 +35,7 @@ namespace Phaxio.Tests.IntegrationTests
 
             var phaxio = new PhaxioClient(config["api_key"], config["api_secret"]);
 
-            var areaCodes = phaxio.ListAreaCodes(state:"HI");
+            var areaCodes = phaxio.ListAreaCodes(state:"FL");
 
             Assert.Greater(areaCodes.Count(), 0, "There should be some area codes");
         }
@@ -29,6 +43,8 @@ namespace Phaxio.Tests.IntegrationTests
         [Test]
         public void IntegrationTests_Numbers_BasicScenario()
         {
+            if (!canProvision) return;
+
             var config = new KeyManager();
 
             var phaxio = new PhaxioClient(config["api_key"], config["api_secret"]);
