@@ -22,5 +22,10 @@ namespace Phaxio.Entities.Internal
         {
             return new Result { Success = Success, Message = Message };
         }
+
+        public Result ToResult(string faxId)
+        {
+            return new Result { Success = Success, Message = Message, Id = faxId };
+        }
     }
 }

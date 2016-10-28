@@ -18,25 +18,27 @@ namespace Phaxio.Entities
             this.client = client;
         }
 
-        public void Send(string toNumber, FileInfo file, FaxOptions options = null)
+        public Result Send(string toNumber, FileInfo file, FaxOptions options = null)
         {
-            Send(new List<string> { toNumber }, new List<FileInfo> { file }, options);
+            return Send(new List<string> { toNumber }, new List<FileInfo> { file }, options);
         }
 
-        public void Send(IEnumerable<string> toNumbers, FileInfo file, FaxOptions options = null)
+        public Result Send(IEnumerable<string> toNumbers, FileInfo file, FaxOptions options = null)
         {
-            Send(toNumbers, new List<FileInfo> { file }, options);
+            return Send(toNumbers, new List<FileInfo> { file }, options);
         }
 
 
-        public void Send(string toNumber, IEnumerable<FileInfo> files, FaxOptions options = null)
+        public Result Send(string toNumber, IEnumerable<FileInfo> files, FaxOptions options = null)
         {
-            Send(new List<string> { toNumber }, files, options);
+            return Send(new List<string> { toNumber }, files, options);
         }
 
-        public void Send(IEnumerable<string> toNumbers, IEnumerable<FileInfo> files, FaxOptions options = null)
+        public Result Send(IEnumerable<string> toNumbers, IEnumerable<FileInfo> files, FaxOptions options = null)
         {
-            Id = client.SendFax(toNumbers, files, options);
+            var result = client.SendFax(toNumbers, files, options);
+            Id = result.Id;
+            return result;
         }
 
         public Result Resend()
