@@ -119,6 +119,8 @@ namespace Phaxio.Tests.IntegrationTests
             Assert.That(result.Id, Is.Not.Null, $"missing fax ID: {result.Message}");
             var faxId = result.Id;
 
+            // Bail if configured such that the account doesn't support the
+            // rest of the test.
             if (!storageEnabled) return;
 
             // Phaxio rate limits, so we need to wait a second.

@@ -52,7 +52,8 @@ namespace Phaxio.Tests
             var testPdf = BinaryFixtures.GetTestPdf();
             var testPdfFile = BinaryFixtures.getTestPdfFile();
 
-            var result = phaxio.SendFax(testToNumber, testPdf, testPdfFile.Name);
+            var fax = phaxio.CreateFax();
+            var result = fax.Send("8088675309", testPdf, testPdfFile.Name);
 
             Assert.That(result.Success, Is.True, $"unsuccessful call: {result.Message}");
             Assert.That(result.Id, Is.Not.Null, $"no fax ID returned: {result.Message}");

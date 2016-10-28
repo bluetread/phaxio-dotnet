@@ -41,6 +41,13 @@ namespace Phaxio.Entities
             return result;
         }
 
+        public Result Send(string toNumber, byte[] file, string filename, FaxOptions options = null)
+        {
+            var result = client.SendFax(toNumber, file, filename, options);
+            Id = result.Id;
+            return result;
+        }
+
         public Result Resend()
         {
             if (Id == null)
