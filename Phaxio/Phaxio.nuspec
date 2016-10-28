@@ -1,15 +1,15 @@
 <?xml version="1.0"?>
 <package >
   <metadata>
-    <id>bluetread.phaxio</id>
+    <id>$id$</id>
     <version>$version$</version>
     <title>$title$</title>
-    <authors>noelherrick</authors>
+    <authors>$author$</authors>
     <owners>$author$</owners>
     <projectUrl>https://github.com/noelherrick/phaxio-dotnet</projectUrl>
     <licenseUrl>https://github.com/noelherrick/phaxio-dotnet/blob/master/LICENSE</licenseUrl>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
-    <description>Phaxio dotnet client</description>
+    <description>$description$</description>
     <releaseNotes>Alpha release of the Phaxio .NET client.</releaseNotes>
     <copyright>Copyright 2016</copyright>
     <tags>Phaxio Fax Faxing</tags>
