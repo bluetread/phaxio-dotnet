@@ -17,5 +17,11 @@ namespace Phaxio.Entities
 
         [DeserializeAs(Name = "completed_at")]
         public long CompletedAt { get; set; }
+
+        [DeserializeAs(Name = "error_code")]
+        public string ErrorCode { get; set; }
+
+        [DeserializeAs(Name = "error_type")]
+        public string ErrorType { get; set; }
     }
 }
